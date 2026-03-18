@@ -2,7 +2,8 @@ import streamlit as st
 from langchain_openai import ChatOpenAI
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain.agents import initialize_agent, AgentType
-from langchain.callbacks import StreamlitCallbackHandler
+# Yahan change kiya gaya hai: New import path for Streamlit Callback
+from langchain_community.callbacks.streamlit import StreamlitCallbackHandler
 
 # 1. Page Configuration
 st.set_page_config(page_title="AI Research Agent", page_icon="🔍", layout="centered")
@@ -25,10 +26,10 @@ if st.button("Run Research"):
         st.warning("Please provide both API keys in the sidebar to continue.")
     else:
         try:
-            # Initializing the LLM (The Brain)
+            # Initializing the LLM
             llm = ChatOpenAI(model="gpt-4o", openai_api_key=openai_api_key, temperature=0.5)
             
-            # Initializing the Search Tool (The Eyes)
+            # Initializing the Search Tool
             search_tool = TavilySearchResults(tavily_api_key=tavily_api_key)
             
             # Initializing the Agent with ReAct Logic
@@ -36,12 +37,14 @@ if st.button("Run Research"):
                 tools=[search_tool],
                 llm=llm,
                 agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+                handle_parsing_errors=True, # Added to prevent crashing on minor AI formatting errors
                 verbose=True
             )
             
             # Displaying the Thinking Process
             with st.container():
                 st_callback = StreamlitCallbackHandler(st.container())
+                # agent.run ki jagah agent.invoke use karein (modern LangChain standard)
                 response = agent.run(user_query, callbacks=[st_callback])
                 
                 # Displaying Final Result
